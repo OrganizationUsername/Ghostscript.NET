@@ -277,7 +277,7 @@ namespace Ghostscript.NET
             gsapi_revision_s rev = new gsapi_revision_s();
             if (this.gsapi_revision(ref rev, System.Runtime.InteropServices.Marshal.SizeOf(rev)) == 0)
             {
-                _revision = rev.revision;
+                _revision = (int)rev.revision;
             }
 
             this.gsapi_new_instance = _library.GetDelegateForFunction<gsapi_new_instance>("gsapi_new_instance");
@@ -374,7 +374,7 @@ namespace Ghostscript.NET
             gsapi_revision_s rev = new gsapi_revision_s();
             if (this.gsapi_revision(ref rev, System.Runtime.InteropServices.Marshal.SizeOf(rev)) == 0)
             {
-                _revision = rev.revision;
+                _revision = (int)rev.revision;
             }
 
             this.gsapi_new_instance = _crossPlatformLibrary.GetDelegateForFunction<gsapi_new_instance>("gsapi_new_instance");

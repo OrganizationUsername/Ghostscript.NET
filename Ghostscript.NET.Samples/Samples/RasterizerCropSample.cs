@@ -25,9 +25,8 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
+using SkiaSharp;
 
 // required Ghostscript.NET namespaces
 using Ghostscript.NET;
@@ -63,8 +62,16 @@ namespace Ghostscript.NET.Samples
                 {
                     string pageFilePath = Path.Combine(outputPath, "Page-" + pageNumber.ToString() + ".png");
 
-                    Image img = rasterizer.GetPage(desired_dpi, pageNumber);
-                    img.Save(pageFilePath, ImageFormat.Png);
+                    SKBitmap img = rasterizer.GetPage(desired_dpi, pageNumber);
+                    if (img != null)
+                    {
+                        using (var image = SKImage.FromBitmap(img))
+                        using (var data = image.Encode(SKEncodedImageFormat.Png, 100))
+                        using (var stream = File.OpenWrite(pageFilePath))
+                        {
+                            data.SaveTo(stream);
+                        }
+                    }
 
                     Console.WriteLine(pageFilePath);
                 }

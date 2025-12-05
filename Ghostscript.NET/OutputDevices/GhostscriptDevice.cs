@@ -27,7 +27,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Drawing;
+using SkiaSharp;
 using Ghostscript.NET.Processor;
 
 namespace Ghostscript.NET
@@ -189,11 +189,11 @@ namespace Ghostscript.NET
                                     parameters.Add(string.Format(switchName, valueAttribute.Value));
                                 }
                             }
-                            else if (valueType == typeof(Color))
+                            else if (valueType == typeof(SKColor))
                             {
-                                Color color = (Color)value;
+                                SKColor color = (SKColor)value;
 
-                                string hexColor = "16#" + color.R.ToString("X2") + color.G.ToString("X2") + color.B.ToString("X2");
+                                string hexColor = "16#" + color.Red.ToString("X2") + color.Green.ToString("X2") + color.Blue.ToString("X2");
 
                                 parameters.Add(string.Format(switchName, hexColor));
                             }

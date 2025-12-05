@@ -69,7 +69,7 @@
             this.panel1 = new System.Windows.Forms.Panel();
             this.panel2 = new System.Windows.Forms.Panel();
             this.panel3 = new System.Windows.Forms.Panel();
-            this.pbPage = new System.Windows.Forms.PictureBox();
+            this.pbPage = new SkiaSharp.Views.Desktop.SKControl();
             this.mnuMain.SuspendLayout();
             this.statusStrip1.SuspendLayout();
             this.panTop.SuspendLayout();
@@ -78,7 +78,6 @@
             this.panGDN.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel3.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pbPage)).BeginInit();
             this.SuspendLayout();
             // 
             // mnuMain
@@ -444,9 +443,7 @@
             this.pbPage.Location = new System.Drawing.Point(4, 4);
             this.pbPage.Name = "pbPage";
             this.pbPage.Size = new System.Drawing.Size(126, 118);
-            this.pbPage.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
             this.pbPage.TabIndex = 1;
-            this.pbPage.TabStop = false;
             // 
             // FMain
             // 
@@ -477,8 +474,6 @@
             this.panGDN.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.panel3.ResumeLayout(false);
-            this.panel3.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pbPage)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -517,7 +512,7 @@
         private System.Windows.Forms.Panel panel3;
         private System.Windows.Forms.ToolStripStatusLabel lblGsVersion;
         private System.Windows.Forms.ToolStripLabel tbTotalPages;
-        private System.Windows.Forms.PictureBox pbPage;
+        private SkiaSharp.Views.Desktop.SKControl pbPage;
         private System.Windows.Forms.ToolStripStatusLabel lblSystemInformation;
         private System.Windows.Forms.ToolStripButton tpZoomOut;
         private System.Windows.Forms.ToolStripButton tpZoomIn;

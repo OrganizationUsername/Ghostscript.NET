@@ -32,6 +32,7 @@ using System.IO;
 // required Ghostscript.NET namespaces
 using Ghostscript.NET;
 using Ghostscript.NET.Rasterizer;
+using SkiaSharp;
 
 namespace Ghostscript.NET.Samples
 {
@@ -67,8 +68,16 @@ namespace Ghostscript.NET.Samples
                 {
                     string pageFilePath = Path.Combine(outputPath, "Page-" + pageNumber.ToString() + ".png");
 
-                    Image img = rasterizer.GetPage(desired_dpi, pageNumber);
-                    img.Save(pageFilePath, ImageFormat.Png);
+                    var img = rasterizer.GetPage(desired_dpi, pageNumber);
+                    if (img != null)
+                    {
+                        using (var image = SKImage.FromBitmap(img))
+                        using (var data = image.Encode(SKEncodedImageFormat.Png, 100))
+                        using (var stream = File.OpenWrite(pageFilePath))
+                        {
+                            data.SaveTo(stream);
+                        }
+                    }
 
                     Console.WriteLine(pageFilePath);
                 }

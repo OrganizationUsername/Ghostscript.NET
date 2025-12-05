@@ -28,8 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.pbDisplay = new System.Windows.Forms.PictureBox();
-            ((System.ComponentModel.ISupportInitialize)(this.pbDisplay)).BeginInit();
+            this.pbDisplay = new SkiaSharp.Views.Desktop.SKControl();
             this.SuspendLayout();
             // 
             // pbDisplay
@@ -37,9 +36,7 @@
             this.pbDisplay.Location = new System.Drawing.Point(0, 0);
             this.pbDisplay.Name = "pbDisplay";
             this.pbDisplay.Size = new System.Drawing.Size(75, 75);
-            this.pbDisplay.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
             this.pbDisplay.TabIndex = 0;
-            this.pbDisplay.TabStop = false;
             // 
             // FPreview
             // 
@@ -52,14 +49,12 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "Ghostscript.NET Display";
             this.Load += new System.EventHandler(this.FPreview_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.pbDisplay)).EndInit();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
         #endregion
 
-        public System.Windows.Forms.PictureBox pbDisplay;
+        public SkiaSharp.Views.Desktop.SKControl pbDisplay;
     }
 }
