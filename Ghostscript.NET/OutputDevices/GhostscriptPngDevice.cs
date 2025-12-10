@@ -25,7 +25,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Drawing;
+using SkiaSharp;
 
 namespace Ghostscript.NET
 {
@@ -142,7 +142,7 @@ namespace Ghostscript.NET
         #region BackgroundColor
 
         [GhostscriptSwitch("-dBackgroundColor={0}")]
-        public Color? BackgroundColor { get; set; }
+        public SKColor? BackgroundColor { get; set; }
 
         #endregion
 

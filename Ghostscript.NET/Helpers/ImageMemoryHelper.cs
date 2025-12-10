@@ -36,20 +36,50 @@ namespace Ghostscript.NET
         public unsafe static void Set24bppRgbImageColor(IntPtr image, int width, int height, byte r, byte g, byte b)
         {
             byte* ptr = (byte*)image;
-            int stride = (((width * 3) + 3) & ~3);
+            int stride = (((width * 4) + 3) & ~3); // BGRA8888 is 4 bytes per pixel
 
-            int padding = stride - (width * 3);
+            int padding = stride - (width * 4);
 
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
                 {
-                    *ptr++ = r;
-                    *ptr++ = g;
-                    *ptr++ = b;
+                    *ptr++ = b; // B
+                    *ptr++ = g; // G
+                    *ptr++ = r; // R
+                    *ptr++ = 255; // A (fully opaque)
                 }
 
                 ptr+=padding;
+            }
+        }
+
+        #endregion
+
+        #region ConvertRgb24ToBgra32
+
+        public unsafe static void ConvertRgb24ToBgra32(IntPtr srcBgr24, IntPtr destBgra32, int width, int height, int srcStride, int destStride)
+        {
+            byte* srcPtr = (byte*)srcBgr24;
+            byte* destPtr = (byte*)destBgra32;
+
+            for (int y = 0; y < height; y++)
+            {
+                byte* srcRow = srcPtr + (y * srcStride);
+                byte* destRow = destPtr + (y * destStride);
+
+                for (int x = 0; x < width; x++)
+                {
+                    // Ghostscript provides BGR format (little-endian: Blue/Black first)
+                    byte b = *srcRow++;
+                    byte g = *srcRow++;
+                    byte r = *srcRow++;
+
+                    *destRow++ = b; // B
+                    *destRow++ = g; // G
+                    *destRow++ = r; // R
+                    *destRow++ = 255; // A (fully opaque)
+                }
             }
         }
 
@@ -66,13 +96,17 @@ namespace Ghostscript.NET
             int srcBottom = y + height - 1;
             int posSrcTop = 0;
             int posDestTop = 0;
+            int bytesToCopy = width * bytesPerPixel;
 
             while (srcTop <= srcBottom)
             {
                 posSrcTop = (srcTop * (stride)) + (x * bytesPerPixel);
                 posDestTop = (destTop * (destStride));
 
-                wdm.MoveMemory(new IntPtr((long)dest + posDestTop), new IntPtr((long)src + posSrcTop), (uint)(width * bytesPerPixel));
+                // Cross-platform memory copy using Marshal.Copy
+                byte[] buffer = new byte[bytesToCopy];
+                Marshal.Copy(new IntPtr((long)src + posSrcTop), buffer, 0, bytesToCopy);
+                Marshal.Copy(buffer, 0, new IntPtr((long)dest + posDestTop), bytesToCopy);
 
                 srcTop++;
                 destTop++;
@@ -92,16 +126,57 @@ namespace Ghostscript.NET
             int destBottom = y + height - 1;
             int posDestTop = 0;
             int posSrcTop = 0;
+            int bytesToCopy = width * bytesPerPixel;
 
             while (destTop <= destBottom)
             {
                 posDestTop = (destTop * stride) + (x * bytesPerPixel);
                 posSrcTop = (srcTop * partStride);
 
-                wdm.MoveMemory(new IntPtr((long)dest + posDestTop), new IntPtr((long)src + posSrcTop), (uint)(width * bytesPerPixel));
+                // Cross-platform memory copy using Marshal.Copy
+                byte[] buffer = new byte[bytesToCopy];
+                Marshal.Copy(new IntPtr((long)src + posSrcTop), buffer, 0, bytesToCopy);
+                Marshal.Copy(buffer, 0, new IntPtr((long)dest + posDestTop), bytesToCopy);
 
                 destTop++;
                 srcTop++;
+            }
+        }
+
+        #endregion
+
+        #region CopyImagePartToRgb24ToBgra32
+
+        public unsafe static void CopyImagePartToRgb24ToBgra32(IntPtr destBgra32, IntPtr srcBgr24, int x, int y, int width, int height, int destStride, int srcStride)
+        {
+            byte* srcPtr = (byte*)srcBgr24;
+            byte* destPtr = (byte*)destBgra32;
+
+            for (int row = 0; row < height; row++)
+            {
+                int srcY = row;
+                int destY = y + row;
+
+                byte* srcRow = srcPtr + (srcY * srcStride);
+                byte* destRow = destPtr + (destY * destStride) + (x * 4); // BGRA is 4 bytes per pixel
+
+                for (int col = 0; col < width; col++)
+                {
+                    int srcX = col;
+                    byte* srcPixel = srcRow + (srcX * 3); // BGR is 3 bytes per pixel
+
+                    // Ghostscript provides BGR format (little-endian: Blue/Black first)
+                    byte b = srcPixel[0];
+                    byte g = srcPixel[1];
+                    byte r = srcPixel[2];
+
+                    destRow[0] = b; // B
+                    destRow[1] = g; // G
+                    destRow[2] = r; // R
+                    destRow[3] = 255; // A (fully opaque)
+
+                    destRow += 4;
+                }
             }
         }
 

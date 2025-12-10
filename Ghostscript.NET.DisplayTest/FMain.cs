@@ -9,6 +9,8 @@ using System.Windows.Forms;
 using Ghostscript.NET;
 using Ghostscript.NET.Viewer;
 using Ghostscript.NET.Interpreter;
+using SkiaSharp;
+using SkiaSharp.Views.Desktop;
 
 namespace Ghostscript.NET.DisplayTest
 {
@@ -17,6 +19,7 @@ namespace Ghostscript.NET.DisplayTest
         private GhostscriptViewer _viewer;
         private FPreview _preview = new FPreview();
         private StdIOHandler _stdioHandler;
+        private SKBitmap _currentBitmap = null;
 
         public FMain()
         {
@@ -48,19 +51,17 @@ namespace Ghostscript.NET.DisplayTest
 
         void _viewer_DisplayPage(object sender, GhostscriptViewerViewEventArgs e)
         {
-            _preview.pbDisplay.Invalidate();
-            _preview.pbDisplay.Update();            
+            _preview.UpdateImage(e.Image);
         }
 
         void _viewer_DisplayUpdate(object sender, GhostscriptViewerViewEventArgs e)
         {
-            _preview.pbDisplay.Invalidate();
-            _preview.pbDisplay.Update();
+            _preview.UpdateImage(e.Image);
         }
 
         void _viewer_DisplaySize(object sender, GhostscriptViewerViewEventArgs e)
         {
-            _preview.pbDisplay.Image = e.Image;
+            _preview.UpdateImage(e.Image);
         }
 
         private void btnRun_Click(object sender, EventArgs e)

@@ -26,9 +26,8 @@
 
 using System;
 using System.Text;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
+using SkiaSharp;
 
 namespace Ghostscript.NET.Viewer
 {
@@ -99,7 +98,7 @@ namespace Ghostscript.NET.Viewer
                 _destImage.Dispose(); _destImage = null;
             }
 
-            _destImage = GhostscriptViewerImage.Create(width, height, raster, PixelFormat.Format24bppRgb);
+            _destImage = GhostscriptViewerImage.Create(width, height, raster, SKColorType.Bgra8888);
 
             return 0;
         }
@@ -119,11 +118,11 @@ namespace Ghostscript.NET.Viewer
                 _destImage.Dispose(); _destImage = null;
             }
 
-            _destImage = GhostscriptViewerImage.Create(width, height, raster, PixelFormat.Format24bppRgb);
+            _destImage = GhostscriptViewerImage.Create(width, height, raster, SKColorType.Bgra8888);
 
             _viewer.FormatHandler.ShowPagePostScriptCommandInvoked = false;
 
-            _viewer.RaiseDisplaySize(new GhostscriptViewerViewEventArgs(_destImage, new Rectangle(0, 0, width, height)));
+            _viewer.RaiseDisplaySize(new GhostscriptViewerViewEventArgs(_destImage, new SKRectI(0, 0, width, height)));
 
             return 0;
         }
@@ -149,21 +148,30 @@ namespace Ghostscript.NET.Viewer
 
             if (!_viewer.ProgressiveUpdate || _viewer.Interpreter.GhostscriptLibrary.Revision > 950)
             {
-                int bytesPerPixel = 3;
+                int srcBytesPerPixel = 3; // BGR from Ghostscript (little-endian: Blue/Black first)
+                int destBytesPerPixel = 4; // BGRA for SkiaSharp
 
                 _destImage.Lock();
 
-                IntPtr tempTile = Marshal.AllocHGlobal(_destImage.Stride * _destImage.Height);
+                // Allocate temporary buffer for BGR24 data
+                int srcStrideSize = (((_destImage.Width * srcBytesPerPixel) + 3) & ~3);
+                IntPtr tempTile = Marshal.AllocHGlobal(srcStrideSize * _destImage.Height);
 
-                ImageMemoryHelper.CopyImagePartFrom(_srcImage, tempTile, 0, 0, _destImage.Width, _destImage.Height, _srcStride, bytesPerPixel);
-                ImageMemoryHelper.FlipImageVertically(tempTile, _destImage.Scan0, _destImage.Height, _destImage.Stride);
+                // Copy BGR24 from source
+                ImageMemoryHelper.CopyImagePartFrom(_srcImage, tempTile, 0, 0, _destImage.Width, _destImage.Height, _srcStride, srcBytesPerPixel);
+                
+                // Flip vertically
+                ImageMemoryHelper.FlipImageVertically(tempTile, tempTile, _destImage.Height, srcStrideSize);
+
+                // Convert BGR24 to BGRA32 and copy to destination
+                ImageMemoryHelper.ConvertRgb24ToBgra32(tempTile, _destImage.Scan0, _destImage.Width, _destImage.Height, srcStrideSize, _destImage.Stride);
 
                 Marshal.FreeHGlobal(tempTile);
 
                 _destImage.Unlock();
             }
 
-            _viewer.RaiseDisplayPage(new GhostscriptViewerViewEventArgs(_destImage, new Rectangle(0, 0, _destImage.Width, _destImage.Height)));
+            _viewer.RaiseDisplayPage(new GhostscriptViewerViewEventArgs(_destImage, new SKRectI(0, 0, _destImage.Width, _destImage.Height)));
 
             return 0;
         }
@@ -176,14 +184,14 @@ namespace Ghostscript.NET.Viewer
         {
             if (_viewer.ProgressiveUpdate)
             {
-                int bytesPerPixel = 3;
+                int srcBytesPerPixel = 3; // BGR from Ghostscript (little-endian: Blue/Black first)
+                int destBytesPerPixel = 4; // BGRA for SkiaSharp
 
                 if (_srcImage != IntPtr.Zero)
                 {
                     _destImage.Lock();
 
-                    int destStrideSize = (((_destImage.Width * bytesPerPixel) + 3) & ~3);
-                    int tileStride = (((w * bytesPerPixel) + 3) & ~3);
+                    int srcTileStride = (((w * srcBytesPerPixel) + 3) & ~3);
 
                     if (_synchTriggered)
                     {
@@ -199,15 +207,19 @@ namespace Ghostscript.NET.Viewer
                         return 0;
                     }
 
-                    IntPtr tempTile = Marshal.AllocHGlobal(tileStride * h);
+                    // Allocate temporary buffer for BGR24 tile
+                    IntPtr tempTile = Marshal.AllocHGlobal(srcTileStride * h);
 
-                    ImageMemoryHelper.CopyImagePartFrom(_srcImage, tempTile, x, y, w, h, _srcStride, bytesPerPixel);
+                    // Copy BGR24 tile from source
+                    ImageMemoryHelper.CopyImagePartFrom(_srcImage, tempTile, x, y, w, h, _srcStride, srcBytesPerPixel);
 
-                    ImageMemoryHelper.FlipImageVertically(tempTile, tempTile, h, tileStride);
+                    // Flip vertically
+                    ImageMemoryHelper.FlipImageVertically(tempTile, tempTile, h, srcTileStride);
 
                     int tileMirrorY = _destImage.Height - y - h;
 
-                    ImageMemoryHelper.CopyImagePartTo(_destImage.Scan0, tempTile, x, tileMirrorY, w, h, destStrideSize, bytesPerPixel);
+                    // Convert BGR24 to BGRA32 and copy to destination
+                    ImageMemoryHelper.CopyImagePartToRgb24ToBgra32(_destImage.Scan0, tempTile, x, tileMirrorY, w, h, _destImage.Stride, srcTileStride);
 
                     Marshal.FreeHGlobal(tempTile);
 
@@ -217,7 +229,7 @@ namespace Ghostscript.NET.Viewer
                     {
                         _lastUpdateTime = Environment.TickCount;
 
-                        _viewer.RaiseDisplayUpdate(new GhostscriptViewerViewEventArgs(_destImage, new Rectangle(0, 0, _destImage.Width, _destImage.Height)));
+                        _viewer.RaiseDisplayUpdate(new GhostscriptViewerViewEventArgs(_destImage, new SKRectI(0, 0, _destImage.Width, _destImage.Height)));
                     }
                 }
             }

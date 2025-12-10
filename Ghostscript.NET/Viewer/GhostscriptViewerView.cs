@@ -25,7 +25,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Drawing;
+using SkiaSharp;
 
 namespace Ghostscript.NET.Viewer
 {
@@ -40,23 +40,23 @@ namespace Ghostscript.NET.Viewer
         #region Private variables
 
         private GhostscriptViewerImage _image;
-        private RectangleF _mediaBox;
+        private SKRect _mediaBox;
 
         #endregion
 
         #region Constructor
 
-        internal GhostscriptViewerViewEventArgs(GhostscriptViewerImage image, Rectangle mediaBox)
+        internal GhostscriptViewerViewEventArgs(GhostscriptViewerImage image, SKRectI mediaBox)
         {
             _image = image;
-            _mediaBox = mediaBox;
+            _mediaBox = new SKRect(mediaBox.Left, mediaBox.Top, mediaBox.Right, mediaBox.Bottom);
         }
 
         #endregion
 
         #region Image
 
-        public Bitmap Image
+        public SKBitmap Image
         {
             get { return _image.Bitmap; }
         }
@@ -66,7 +66,7 @@ namespace Ghostscript.NET.Viewer
         #region MediaBox
 
 
-        public RectangleF MediaBox
+        public SKRect MediaBox
         {
             get { return _mediaBox; }
         }

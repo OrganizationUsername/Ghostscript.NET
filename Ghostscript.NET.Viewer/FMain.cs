@@ -35,6 +35,8 @@ using System.Windows.Forms;
 using System.IO;
 using System.Runtime.InteropServices;
 using Ghostscript.NET.Viewer;
+using SkiaSharp;
+using SkiaSharp.Views.Desktop;
 
 namespace Ghostscript.NET.Viewer
 {
@@ -45,6 +47,7 @@ namespace Ghostscript.NET.Viewer
         private StringBuilder _stdOut = new StringBuilder();
         private StringBuilder _stdErr = new StringBuilder();
         private bool _supressPageNumberChangeEvent = false;
+        private SKBitmap _currentBitmap = null;
 
         public FMain()
         {
@@ -54,6 +57,7 @@ namespace Ghostscript.NET.Viewer
 
             pbPage.Width = 100;
             pbPage.Height = 100;
+            pbPage.PaintSurface += PbPage_PaintSurface;
 
             _viewer = new GhostscriptViewer();
             _viewer.AttachStdIO(new GhostscriptStdIOHandler(_stdOut, _stdErr));
@@ -63,27 +67,72 @@ namespace Ghostscript.NET.Viewer
             _viewer.DisplayPage += new GhostscriptViewerViewEventHandler(_viewer_DisplayPage);
         }
 
+        private void PbPage_PaintSurface(object sender, SKPaintSurfaceEventArgs e)
+        {
+            var canvas = e.Surface.Canvas;
+            canvas.Clear(SKColors.White);
+
+            if (_currentBitmap != null)
+            {
+                var destRect = SKRect.Create(pbPage.Width, pbPage.Height);
+                var sourceRect = SKRect.Create(_currentBitmap.Width, _currentBitmap.Height);
+                canvas.DrawBitmap(_currentBitmap, sourceRect, destRect);
+            }
+        }
+
         void _viewer_DisplaySize(object sender, GhostscriptViewerViewEventArgs e)
         {
-            pbPage.Image = e.Image;
+            _currentBitmap = e.Image;
+            ResizeCanvas(e.Image);
+            RefreshCanvas();
         }
 
         void _viewer_DisplayUpdate(object sender, GhostscriptViewerViewEventArgs e)
         {
-            pbPage.Invalidate();
-            pbPage.Update();
+            _currentBitmap = e.Image;
+            RefreshCanvas();
         }
 
         void _viewer_DisplayPage(object sender, GhostscriptViewerViewEventArgs e)
         {
-            pbPage.Invalidate();
-            pbPage.Update();
+            _currentBitmap = e.Image;
+            ResizeCanvas(e.Image);
+            RefreshCanvas();
 
             _supressPageNumberChangeEvent = true;
             tbPageNumber.Text = _viewer.CurrentPageNumber.ToString();
             _supressPageNumberChangeEvent = false;
 
             tbTotalPages.Text = " / " + _viewer.LastPageNumber.ToString();
+        }
+
+        private void ResizeCanvas(SKBitmap bitmap)
+        {
+            if (bitmap == null)
+            {
+                return;
+            }
+
+            if (pbPage.Width == bitmap.Width && pbPage.Height == bitmap.Height)
+            {
+                return;
+            }
+
+            pbPage.SuspendLayout();
+            pbPage.Width = bitmap.Width;
+            pbPage.Height = bitmap.Height;
+            pbPage.ResumeLayout();
+        }
+
+        private void RefreshCanvas()
+        {
+            if (!pbPage.IsHandleCreated)
+            {
+                return;
+            }
+
+            pbPage.Invalidate();
+            pbPage.Update();
         }
 
         private void FMain_Load(object sender, EventArgs e)
@@ -120,7 +169,8 @@ namespace Ghostscript.NET.Viewer
             _stdOut.Clear();
             _stdErr.Clear();
 
-            pbPage.Image = null;
+            _currentBitmap = null;
+            pbPage.Invalidate();
             this.Text = Program.NAME;
             tbPageNumber.Text = string.Empty;
             tbTotalPages.Text = string.Empty;

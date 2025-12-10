@@ -25,8 +25,7 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Drawing;
-using System.Drawing.Imaging;
+using SkiaSharp;
 
 namespace Ghostscript.NET.Viewer
 {
@@ -38,24 +37,22 @@ namespace Ghostscript.NET.Viewer
         private bool _disposed = false;
         private int _width;
         private int _height;
-        private Rectangle _rect;
         private int _stride;
-        private Bitmap _bitmap;
-        private BitmapData _bitmapData;
+        private SKBitmap _bitmap;
+        private IntPtr _pixelsPtr;
+        private bool _isLocked = false;
 
         #endregion
 
         #region Constructor
 
-        public GhostscriptViewerImage(int width, int height, int stride, PixelFormat format)
+        public GhostscriptViewerImage(int width, int height, int stride, SKColorType colorType)
         {
             _width = width;
             _height = height;
             _stride = stride;
 
-            _rect = new Rectangle(0, 0, _width, _height);
-
-            _bitmap = new Bitmap(width, height, format);
+            _bitmap = new SKBitmap(width, height, colorType, SKAlphaType.Opaque);
         }
 
         #endregion
@@ -89,12 +86,12 @@ namespace Ghostscript.NET.Viewer
             {
                 if (disposing)
                 {
-                    if (_bitmapData != null)
+                    if (_isLocked)
                     {
                         this.Unlock();
                     }
 
-                    _bitmap.Dispose();
+                    _bitmap?.Dispose();
                     _bitmap = null;
                 }
 
@@ -108,9 +105,9 @@ namespace Ghostscript.NET.Viewer
 
         #region Create
 
-        public static GhostscriptViewerImage Create(int width, int height, int stride, PixelFormat format)
+        public static GhostscriptViewerImage Create(int width, int height, int stride, SKColorType colorType)
         {
-            GhostscriptViewerImage gvi = new GhostscriptViewerImage(width, height, stride, format);
+            GhostscriptViewerImage gvi = new GhostscriptViewerImage(width, height, stride, colorType);
             return gvi;
         }
 
@@ -120,9 +117,10 @@ namespace Ghostscript.NET.Viewer
 
         internal void Lock()
         {
-            if (_bitmapData == null)
+            if (!_isLocked)
             {
-                _bitmapData = _bitmap.LockBits(_rect, ImageLockMode.WriteOnly, _bitmap.PixelFormat);
+                _pixelsPtr = _bitmap.GetPixels();
+                _isLocked = true;
             }
         }
 
@@ -132,7 +130,7 @@ namespace Ghostscript.NET.Viewer
 
         internal IntPtr Scan0
         {
-            get { return _bitmapData.Scan0; }
+            get { return _pixelsPtr; }
         }
 
         #endregion
@@ -141,7 +139,7 @@ namespace Ghostscript.NET.Viewer
 
         public int Stride
         {
-            get { return _bitmapData.Stride; }
+            get { return _bitmap.RowBytes; }
         }
 
         #endregion
@@ -150,10 +148,10 @@ namespace Ghostscript.NET.Viewer
 
         internal void Unlock()
         {
-            if (_bitmapData != null)
+            if (_isLocked)
             {
-                _bitmap.UnlockBits(_bitmapData);
-                _bitmapData = null;
+                _pixelsPtr = IntPtr.Zero;
+                _isLocked = false;
             }
         }
 
@@ -179,7 +177,7 @@ namespace Ghostscript.NET.Viewer
 
         #region Bitmap
 
-        public Bitmap @Bitmap
+        public SKBitmap @Bitmap
         {
             get { return _bitmap; }
         }

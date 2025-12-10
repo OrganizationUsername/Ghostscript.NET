@@ -39,8 +39,8 @@ namespace Ghostscript.NET
     {
         public IntPtr product;
         public IntPtr copyright;
-        public int revision;
-        public int revisiondate;
+        public long revision;
+        public long revisiondate;
     }
 
     #endregion

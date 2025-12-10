@@ -26,9 +26,9 @@
 
 using System;
 using System.IO;
-using System.Drawing;
 using Ghostscript.NET.Viewer;
 using System.Collections.Generic;
+using SkiaSharp;
 
 namespace Ghostscript.NET.Rasterizer
 {
@@ -39,7 +39,7 @@ namespace Ghostscript.NET.Rasterizer
 
         private bool _disposed = false;
         private GhostscriptViewer _viewer;
-        private Image _lastRasterizedImage = null;
+        private SKBitmap _lastRasterizedImage = null;
         private GhostscriptViewerState _gsViewState;
 
         #endregion
@@ -280,12 +280,12 @@ namespace Ghostscript.NET.Rasterizer
         #region GetPage
 
         /// <summary>
-        /// Gets PDF page as System.Drawing.Image.
+        /// Gets PDF page as SkiaSharp.SKBitmap.
         /// </summary>
         /// <param name="dpi">Desired dpi.</param>
         /// <param name="pageNumber">The page number.</param>
-        /// <returns>PDF page represented as System.Drawing.Image.</returns>
-        public Image GetPage(int dpi, int pageNumber)
+        /// <returns>PDF page represented as SkiaSharp.SKBitmap.</returns>
+        public SKBitmap GetPage(int dpi, int pageNumber)
         {
             _viewer.Dpi = dpi;
             _viewer.ShowPage(pageNumber, true);
@@ -300,7 +300,7 @@ namespace Ghostscript.NET.Rasterizer
         {
             if (e.Image != null)
             {
-                _lastRasterizedImage = e.Image.Clone() as Image;
+                _lastRasterizedImage = e.Image.Copy();
             }
         }
 

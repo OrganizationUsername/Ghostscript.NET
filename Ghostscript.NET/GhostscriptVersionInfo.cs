@@ -307,107 +307,86 @@ namespace Ghostscript.NET
                 return versions;
             }
 
+            // Library names to search for (in order of preference - newer versions first)
+            string[] libraryNames = { "libgs.so.10", "libgs.so.9", "libgs.so" };
+
             // Search for libgs.so in common locations
             string[] searchPaths = CrossPlatformNativeLibraryHelper.GetCommonInstallationPaths();
 
             foreach (string basePath in searchPaths)
             {
-                if (Directory.Exists(basePath))
+                if (!Directory.Exists(basePath))
                 {
-                    // Look for libgs.so directly
-                    string libPath = Path.Combine(basePath, "libgs.so.10");
+                    continue;
+                }
+
+                // Check for libraries directly in basePath
+                foreach (string libName in libraryNames)
+                {
+                    string libPath = Path.Combine(basePath, libName);
                     if (File.Exists(libPath))
                     {
-                        try
-                        {
-                            // Try to get version information from the library
-                            Version version = GetVersionFromLinuxLibrary(libPath);
-                            if (version != null)
-                            {
-                                versions.Add(new GhostscriptVersionInfo(version, libPath, basePath, licenseType));
-                            }
-                            else
-                            {
-                                // If we can't get version info, create a generic version
-                                versions.Add(new GhostscriptVersionInfo(new Version(0, 0), libPath, basePath, licenseType));
-                            }
-                        }
-                        catch
-                        {
-                            // If we can't get version info, create a generic version
-                            versions.Add(new GhostscriptVersionInfo(new Version(0, 0), libPath, basePath, licenseType));
-                        }
+                        TryAddVersion(versions, libPath, basePath, licenseType);
+                        break; // Found a library in this path, no need to check other names
                     }
-                    else
-                    {
-                        libPath = Path.Combine(basePath, "libgs.so");
-                        if (File.Exists(libPath))
-                        {
-                            try
-                            {
-                                // Try to get version information from the library
-                                Version version = GetVersionFromLinuxLibrary(libPath);
-                                if (version != null)
-                                {
-                                    versions.Add(new GhostscriptVersionInfo(version, libPath, basePath, licenseType));
-                                }
-                                else
-                                {
-                                    // If we can't get version info, create a generic version
-                                    versions.Add(new GhostscriptVersionInfo(new Version(0, 0), libPath, basePath, licenseType));
-                                }
-                            }
-                            catch
-                            {
-                                // If we can't get version info, create a generic version
-                                versions.Add(new GhostscriptVersionInfo(new Version(0, 0), libPath, basePath, licenseType));
-                            }
-                        }
-                    }
+                }
 
-                    // Look in subdirectories
-                    try
-                    {
-                        string[] subdirs = Directory.GetDirectories(basePath);
-                        foreach (string subdir in subdirs)
-                        {
-                            string[] possiblePaths = {
-                                Path.Combine(subdir, "lib", "libgs.so.10"),
-                                Path.Combine(subdir, "lib64", "libgs.so.10"),
-                                Path.Combine(subdir, "bin", "libgs.so.10"),
-                                Path.Combine(subdir, "lib", "libgs.so"),
-                                Path.Combine(subdir, "lib64", "libgs.so"),
-                                Path.Combine(subdir, "bin", "libgs.so")
-                            };
+                // Look in subdirectories
+                try
+                {
+                    string[] subdirs = Directory.GetDirectories(basePath);
+                    string[] subdirPaths = { "lib", "lib64", "bin" };
 
-                            foreach (string possiblePath in possiblePaths)
+                    foreach (string subdir in subdirs)
+                    {
+                        foreach (string subdirPath in subdirPaths)
+                        {
+                            string subdirFullPath = Path.Combine(subdir, subdirPath);
+                            if (!Directory.Exists(subdirFullPath))
                             {
+                                continue;
+                            }
+
+                            foreach (string libName in libraryNames)
+                            {
+                                string possiblePath = Path.Combine(subdirFullPath, libName);
                                 if (File.Exists(possiblePath))
                                 {
-                                    try
-                                    {
-                                        Version version = GetVersionFromLinuxLibrary(possiblePath);
-                                        if (version != null)
-                                        {
-                                            versions.Add(new GhostscriptVersionInfo(version, possiblePath, subdir, licenseType));
-                                        }
-                                    }
-                                    catch
-                                    {
-                                        versions.Add(new GhostscriptVersionInfo(new Version(0, 0), possiblePath, subdir, licenseType));
-                                    }
+                                    TryAddVersion(versions, possiblePath, subdir, licenseType);
+                                    break; // Found a library in this subdirectory, no need to check other names
                                 }
                             }
                         }
                     }
-                    catch
-                    {
-                        // Ignore directory access errors
-                    }
+                }
+                catch
+                {
+                    // Ignore directory access errors
                 }
             }
 
             return versions;
+        }
+
+        /// <summary>
+        /// Helper method to try adding a version from a library path.
+        /// </summary>
+        private static void TryAddVersion(List<GhostscriptVersionInfo> versions, string libPath, string basePath, GhostscriptLicense licenseType)
+        {
+            try
+            {
+                Version version = GetVersionFromLinuxLibrary(libPath);
+                versions.Add(new GhostscriptVersionInfo(
+                    version ?? new Version(0, 0),
+                    libPath,
+                    basePath,
+                    licenseType));
+            }
+            catch
+            {
+                // If we can't get version info, create a generic version
+                versions.Add(new GhostscriptVersionInfo(new Version(0, 0), libPath, basePath, licenseType));
+            }
         }
 
         #endregion

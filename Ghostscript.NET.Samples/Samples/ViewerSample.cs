@@ -26,7 +26,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
+using SkiaSharp;
 
 // required Ghostscript.NET namespaces
 using Ghostscript.NET;
@@ -38,7 +38,7 @@ namespace Ghostscript.NET.Samples
     {
         private GhostscriptVersionInfo _lastInstalledVersion = null;
         private GhostscriptViewer _viewer = null;
-        private Bitmap _pdfPage = null;
+        private SKBitmap _pdfPage = null;
 
         public void Start()
         {
@@ -92,7 +92,7 @@ namespace Ghostscript.NET.Samples
             // it by calling PictureBox.Invalidate() and PictureBox.Update()
             // methods. We dont need to set image reference again because
             // Ghostscript.NET is changing Image object directly in the
-            // memory and does not create new Bitmap instance.
+            // memory and does not create new SKBitmap instance.
         }
 
         // this is the last raised event after complete page is rasterized
