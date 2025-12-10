@@ -25,11 +25,13 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using Ghostscript.NET;
+using Ghostscript.NET.Processor;
 using Ghostscript.NET.Rasterizer;
 using Ghostscript.NET.Samples;
 using SkiaSharp;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 Console.WriteLine("Ghostscript.NET Samples");
@@ -59,28 +61,6 @@ foreach (ISample sample in samples)
 {
     sample.Start();
     Console.WriteLine($"Sample '{sample.GetType().Name}' run successful!");
-}
-
-GhostscriptVersionInfo lastVersion = GhostscriptVersionInfo.GetLastInstalledVersion();
-
-using (var rasterizer = new GhostscriptRasterizer())
-{
-    rasterizer.Open(@"e:\Tmp\test.pdf", lastVersion, false);
-
-    for (var pageNumber = 1; pageNumber <= rasterizer.PageCount; pageNumber++)
-    {
-        var pageFilePath = Path.Combine(@"e:\Tmp\", string.Format("SkisSharp-{0}.png", pageNumber));
-
-        var img = rasterizer.GetPage(300, pageNumber);
-        using (var image = SKImage.FromBitmap(img))
-        using (var data = image.Encode(SKEncodedImageFormat.Png, 100))
-        using (var stream = File.OpenWrite(pageFilePath))
-        {
-            data.SaveTo(stream);
-        }
-
-        Console.WriteLine(pageFilePath);
-    }
 }
 
 Console.ReadKey();
