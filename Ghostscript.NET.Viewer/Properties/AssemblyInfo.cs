@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("Ghostscript.NET.Viewer")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Habjan")]
+[assembly: AssemblyCompany("Artifex Software Inc.")]
 [assembly: AssemblyProduct("Ghostscript.NET.Viewer")]
 [assembly: AssemblyCopyright("Copyright © 2026 Artifex Software Inc.")]
 [assembly: AssemblyTrademark("")]
