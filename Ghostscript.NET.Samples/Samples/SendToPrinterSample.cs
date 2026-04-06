@@ -2,8 +2,8 @@
 // ProcessorSample.cs
 // This file is part of Ghostscript.NET.Samples project
 //
-// Author: Josip Habjan (habjan@gmail.com, http://www.linkedin.com/in/habjan) 
-// Copyright (c) 2013-2016 by Josip Habjan. All rights reserved.
+// Author: Artifex Software Inc. 
+// Copyright (c) 2026 by Artifex Software Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -36,8 +36,8 @@ namespace Ghostscript.NET.Samples
         {
             // YOU NEED TO HAVE ADMINISTRATOR RIGHTS TO RUN THIS CODE
 
-            string printerName = "YourPrinterName";
-            string inputFile = @"E:\__test_data\test.pdf";
+            string printerName = "Microsoft Print to PDF";
+            string inputFile = @"..\..\..\TestFiles\SendToPrinterSample.pdf";
 
             using (GhostscriptProcessor processor = new GhostscriptProcessor())
             {

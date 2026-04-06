@@ -2,8 +2,8 @@
 // AddWatermarkSample.cs
 // This file is part of Ghostscript.NET.Samples project
 //
-// Author: Josip Habjan (habjan@gmail.com, http://www.linkedin.com/in/habjan) 
-// Copyright (c) 2013-2016 by Josip Habjan. All rights reserved.
+// Author: Artifex Software Inc. 
+// Copyright (c) 2026 by Artifex Software Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -81,18 +81,18 @@ namespace Ghostscript.NET.Samples
             dev.GraphicsAlphaBits = GhostscriptImageDeviceAlphaBits.V_4;
             dev.TextAlphaBits = GhostscriptImageDeviceAlphaBits.V_4;
             dev.ResolutionXY = new GhostscriptImageDeviceResolution(96, 96);
-            dev.InputFiles.Add(@"E:\gss_test\test.pdf");
+            dev.InputFiles.Add(@"..\..\..\TestFiles\AddWatermarkSample.pdf");
             dev.Pdf.FirstPage = 2;
             dev.Pdf.LastPage = 4;
             dev.PostScript = POSTSCRIPT_APPEND_WATERMARK;
-            dev.OutputPath = @"E:\gss_test\output\indispensable_color_page_%03d.png";
+            dev.OutputPath = @".\Output\AddWatermarkSample-%03d.png";
             dev.Process();
         }
 
         private void Add_Watermark_To_PDF_Document()
         {
-            string inputFile = @"E:\gss_test\test.pdf";
-            string outputFile = @"E:\gss_test\output\test-watermarked.pdf";
+            string inputFile = @"..\..\..\TestFiles\AddWatermarkSample.pdf";
+            string outputFile = @".\Output\AddWatermarkSample-watermarked.pdf";
 
             List<string> switches = new List<string>();
             switches.Add(string.Empty);
@@ -114,9 +114,6 @@ namespace Ghostscript.NET.Samples
                 // start processing pdf file
                 processor.StartProcessing(switches.ToArray(), null);
             }
-
-            // show new pdf
-            Process.Start(outputFile);
         }
 
     }

@@ -2,8 +2,8 @@
 // GhostscriptLicence.cs
 // This file is part of Ghostscript.NET library
 //
-// Author: Josip Habjan (habjan@gmail.com, http://www.linkedin.com/in/habjan) 
-// Copyright (c) 2013-2016 by Josip Habjan. All rights reserved.
+// Author: Artifex Software Inc. 
+// Copyright (c) 2026 by Artifex Software Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the

@@ -2,8 +2,8 @@
 // ViewerSample.cs
 // This file is part of Ghostscript.NET.Samples project
 //
-// Author: Josip Habjan (habjan@gmail.com, http://www.linkedin.com/in/habjan) 
-// Copyright (c) 2013-2016 by Josip Habjan. All rights reserved.
+// Author: Artifex Software Inc. 
+// Copyright (c) 2026 by Artifex Software Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -25,7 +25,8 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using System;
-using System.Collections.Generic;
+using System.IO;
+using System.Threading;
 using SkiaSharp;
 
 // required Ghostscript.NET namespaces
@@ -39,6 +40,9 @@ namespace Ghostscript.NET.Samples
         private GhostscriptVersionInfo _lastInstalledVersion = null;
         private GhostscriptViewer _viewer = null;
         private SKBitmap _pdfPage = null;
+        private ManualResetEventSlim _firstPageDone;
+        private readonly object _firstPageLock = new object();
+        private bool _handledFirstPage;
 
         public void Start()
         {
@@ -50,28 +54,52 @@ namespace Ghostscript.NET.Samples
             // of the GPL or AFPL Ghostscript and if both are available we prefer 
             // to use GPL version.
 
-            _lastInstalledVersion = 
+            _lastInstalledVersion =
                 GhostscriptVersionInfo.GetLastInstalledVersion();
 
-            // create a new instance of the viewer
-            _viewer = new GhostscriptViewer();
+            _firstPageDone = new ManualResetEventSlim(false);
+            try
+            {
+                // create a new instance of the viewer
+                _viewer = new GhostscriptViewer();
 
-            // set the display update interval to 10 times per second. This value
-            // is milliseconds based and updating display every 100 milliseconds
-            // is optimal value. The smaller value you set the rasterizing will 
-            // take longer as DisplayUpdate event will be raised more often.
-            _viewer.ProgressiveUpdateInterval = 100;
+                // set the display update interval to 10 times per second. This value
+                // is milliseconds based and updating display every 100 milliseconds
+                // is optimal value. The smaller value you set the rasterizing will 
+                // take longer as DisplayUpdate event will be raised more often.
+                _viewer.ProgressiveUpdateInterval = 100;
 
-            // attach three main viewer events
-            _viewer.DisplaySize += new GhostscriptViewerViewEventHandler(_viewer_DisplaySize);
-            _viewer.DisplayUpdate += new GhostscriptViewerViewEventHandler(_viewer_DisplayUpdate);
-            _viewer.DisplayPage += new GhostscriptViewerViewEventHandler(_viewer_DisplayPage);
+                // attach three main viewer events
+                _viewer.DisplaySize += new GhostscriptViewerViewEventHandler(_viewer_DisplaySize);
+                _viewer.DisplayUpdate += new GhostscriptViewerViewEventHandler(_viewer_DisplayUpdate);
+                _viewer.DisplayPage += new GhostscriptViewerViewEventHandler(_viewer_DisplayPage);
 
-            // open PDF file using the last Ghostscript version. If you want to use
-            // multiple viewers withing a single process then you need to pass 'true' 
-            // value as the last parameter of the method below in order to tell the
-            // viewer to load Ghostscript from the memory and not from the disk.
-            _viewer.Open(@"E:\gss_test\test.pdf",_lastInstalledVersion, false);
+                // Use TestFiles\PipedOutputSample.ps (included). For PDF, place e.g.
+                // ProcessorSample1.pdf in TestFiles and change the path below.
+                // If you want to use multiple viewers within a single process then pass
+                // true as the last parameter so Ghostscript loads from memory.
+                Console.WriteLine("Rendering first page to Output\\ViewerSample.png ...");
+                _viewer.Open(@"..\..\..\TestFiles\PipedOutputSample.ps", _lastInstalledVersion, false);
+
+                if (!_firstPageDone.Wait(TimeSpan.FromSeconds(120)))
+                {
+                    Console.WriteLine("Timed out waiting for the first page (check Ghostscript and the input file).");
+                }
+            }
+            finally
+            {
+                if (_viewer != null)
+                {
+                    _viewer.Dispose();
+                    _viewer = null;
+                }
+
+                if (_firstPageDone != null)
+                {
+                    _firstPageDone.Dispose();
+                    _firstPageDone = null;
+                }
+            }
         }
 
         // this is the first raised event before PDF page starts rasterizing. 
@@ -81,6 +109,7 @@ namespace Ghostscript.NET.Samples
         {
             // store PDF page image reference
             _pdfPage = e.Image;
+            Console.WriteLine($"DisplaySize: {e.MediaBox.Width}x{e.MediaBox.Height} (logical units).");
         }
 
         // this event is raised when a tile or the part of the page is rasterized
@@ -98,8 +127,44 @@ namespace Ghostscript.NET.Samples
         // this is the last raised event after complete page is rasterized
         void _viewer_DisplayPage(object sender, GhostscriptViewerViewEventArgs e)
         {
-            // complete PDF page is rasterized and we can update our PictureBox
-            // once again by calling PictureBox.Invalidate() and PictureBox.Update()
+            lock (_firstPageLock)
+            {
+                if (_handledFirstPage)
+                {
+                    return;
+                }
+
+                _handledFirstPage = true;
+            }
+
+            try
+            {
+                SKBitmap bmp = e.Image ?? _pdfPage;
+                if (bmp == null)
+                {
+                    Console.WriteLine("DisplayPage: no bitmap to save.");
+                    return;
+                }
+
+                Directory.CreateDirectory("Output");
+                string outPath = Path.Combine("Output", "ViewerSample.png");
+                using (SKImage image = SKImage.FromBitmap(bmp))
+                using (SKData data = image.Encode(SKEncodedImageFormat.Png, 100))
+                using (Stream stream = File.Create(outPath))
+                {
+                    data.SaveTo(stream);
+                }
+
+                Console.WriteLine($"First page saved to {Path.GetFullPath(outPath)}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed to save viewer output: " + ex.Message);
+            }
+            finally
+            {
+                _firstPageDone?.Set();
+            }
         }
 
         // dummy method just to list other viewer properties and methods
@@ -134,9 +199,8 @@ namespace Ghostscript.NET.Samples
             // gets or sets text aplha bits
             int gtb = _viewer.TextAlphaBits;
             // gets or sets progressive update on or off
-            bool pu =_viewer.ProgressiveUpdate;
+            bool pu = _viewer.ProgressiveUpdate;
         }
 
     }
 }
-

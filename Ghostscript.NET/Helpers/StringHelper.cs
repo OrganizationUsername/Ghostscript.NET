@@ -2,8 +2,8 @@
 // StreamHelper.cs
 // This file is part of Ghostscript.NET library
 //
-// Author: Josip Habjan (habjan@gmail.com, http://www.linkedin.com/in/habjan) 
-// Copyright (c) 2013-2021 by Josip Habjan. All rights reserved.
+// Author: Artifex Software Inc. 
+// Copyright (c) 2026 by Artifex Software Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -51,6 +51,18 @@ namespace Ghostscript.NET
             IntPtr nativeUtf8 = Marshal.AllocHGlobal(buffer.Length);
             Marshal.Copy(buffer, 0, nativeUtf8, buffer.Length);
             return nativeUtf8;
+        }
+
+        public static IntPtr NativeAnsiFromString(string managedString)
+        {
+            // Use system default encoding (ANSI / code page) and produce null-terminated buffer
+            Encoding enc = Encoding.Default;
+            int len = enc.GetByteCount(managedString);
+            byte[] buffer = new byte[len + 1];
+            enc.GetBytes(managedString, 0, managedString.Length, buffer, 0);
+            IntPtr nativeAnsi = Marshal.AllocHGlobal(buffer.Length);
+            Marshal.Copy(buffer, 0, nativeAnsi, buffer.Length);
+            return nativeAnsi;
         }
 
         #endregion

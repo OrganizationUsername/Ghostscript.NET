@@ -2,8 +2,8 @@
 // Program.cs
 // This file is part of Ghostscript.NET.Samples project
 //
-// Author: Josip Habjan (habjan@gmail.com, http://www.linkedin.com/in/habjan) 
-// Copyright (c) 2013-2016 by Josip Habjan. All rights reserved.
+// Author: Artifex Software Inc. 
+// Copyright (c) 2026 by Artifex Software Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -28,7 +28,9 @@ using Ghostscript.NET;
 using Ghostscript.NET.Processor;
 using Ghostscript.NET.Rasterizer;
 using Ghostscript.NET.Samples;
+using javax.print.attribute.standard;
 using SkiaSharp;
+using SixLabors.ImageSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -43,24 +45,30 @@ if (!GhostscriptVersionInfo.IsGhostscriptInstalled)
 
 List<ISample> samples = new()
 {
-    //new GetInkCoverageSample(),
-    //new ProcessorSample1(),
-    //new ProcessorSample2(),
-    //new FindInstalledGhostscriptVersionsSample(),
-    //new RunMultipleInstancesSample(),
-    //new ViewerSample(),
-    //new RasterizerSample1(),
-    //new RasterizerSample2(),
-    //new AddWatermarkSample(),
-    //new DeviceUsageSample(),
-    //new PipedOutputSample(),
-    //new SendToPrinterSample()
+    new GetInkCoverageSample(),
+    new ProcessorSample1(),
+    new ProcessorSample2(),
+    new FindInstalledGhostscriptVersionsSample(),
+    new RunMultipleInstancesSample(),
+    new ViewerSample(),
+    new RasterizerSample1(),
+    new RasterizerSample2(),
+    new AddWatermarkSample(),
+    new DeviceUsageSample(),
+    new PipedOutputSample(),
+    new SendToPrinterSample(),
+    new UnicodeTestSample()
 };
 
 foreach (ISample sample in samples)
 {
+    string path = @"Output";
+
+    if (!Directory.Exists(path))
+    {
+        Directory.CreateDirectory(path);
+    }
+
     sample.Start();
     Console.WriteLine($"Sample '{sample.GetType().Name}' run successful!");
 }
-
-Console.ReadKey();

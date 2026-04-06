@@ -2,8 +2,8 @@
 // GetInkCoverageSample.cs
 // This file is part of Ghostscript.NET.Samples project
 //
-// Author: Josip Habjan (habjan@gmail.com, http://www.linkedin.com/in/habjan) 
-// Copyright (c) 2013-2016 by Josip Habjan. All rights reserved.
+// Author: Artifex Software Inc. 
+// Copyright (c) 2026 by Artifex Software Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -26,6 +26,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Ghostscript.NET.Samples
 {
@@ -42,7 +43,7 @@ namespace Ghostscript.NET.Samples
 
         private void CheckAllPagesInkCoverage()
         {
-            string inputFile = @"E:\gss_test\mixed_test.pdf";
+            string inputFile = @"..\..\..\TestFiles\GetInkCoverageSample.pdf";
 
             Dictionary<int, GhostscriptPageInkCoverage> pages = GhostscriptPdfInfo.GetInkCoverage(inputFile);
 
@@ -58,7 +59,7 @@ namespace Ghostscript.NET.Samples
 
         private void CheckInkCoverageForPagesThreeToSix()
         {
-            string inputFile = @"E:\gss_test\mixed_test.pdf";
+            string inputFile = @"..\..\..\TestFiles\GetInkCoverageSample.pdf";
             Dictionary<int, GhostscriptPageInkCoverage> pages = GhostscriptPdfInfo.GetInkCoverage(inputFile, 3, 6);
 
             string outputTextTemplate = "Page {0} ink coverage -> C:{1}% / M:{2}% / Y:{3}% / K:{4}%";

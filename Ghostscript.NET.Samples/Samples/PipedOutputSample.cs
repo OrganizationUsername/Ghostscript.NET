@@ -2,8 +2,8 @@
 // PipedOutputSample.cs
 // This file is part of Ghostscript.NET.Samples project
 //
-// Author: Josip Habjan (habjan@gmail.com, http://www.linkedin.com/in/habjan) 
-// Copyright (c) 2013-2016 by Josip Habjan. All rights reserved.
+// Author: Artifex Software Inc. 
+// Copyright (c) 2026 by Artifex Software Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -42,7 +42,7 @@ namespace Ghostscript.NET.Samples
     {
         public void Start()
         {
-            string inputFile = @"E:\gss_test\test_postscript.ps";
+            string inputFile = @"..\..\..\TestFiles\PipedOutputSample.ps";
 
             GhostscriptPipedOutput gsPipedOutput = new GhostscriptPipedOutput();
 
@@ -76,7 +76,7 @@ namespace Ghostscript.NET.Samples
                     //}
                     //else if (writeToDisk)
                     //{
-                    //    File.WriteAllBytes(@"E:\gss_test\output\test_piped_output.pdf", rawDocumentData);
+                        File.WriteAllBytes(@".\output\PipedOutputSample.pdf", rawDocumentData);
                     //}
                 }
                 catch (Exception ex)

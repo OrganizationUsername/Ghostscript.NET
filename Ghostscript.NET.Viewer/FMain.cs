@@ -2,8 +2,8 @@
 // FMain.cs
 // This file is part of Ghostscript.NET.Viewer project
 //
-// Author: Josip Habjan (habjan@gmail.com, http://www.linkedin.com/in/habjan) 
-// Copyright (c) 2013-2016 by Josip Habjan. All rights reserved.
+// Author: Artifex Software Inc. 
+// Copyright (c) 2026 by Artifex Software Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -224,7 +224,7 @@ namespace Ghostscript.NET.Viewer
 
         private void mnuAbout_Click(object sender, EventArgs e)
         {
-            MessageBox.Show(this, "Powered by Ghostscript.NET & Josip Habjan (habjan@gmail.com)", "About " + Program.NAME, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(this, "Powered by Ghostscript.NET & Artifex Software Inc.", "About " + Program.NAME, MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void mnuNext_Click(object sender, EventArgs e)

@@ -2,8 +2,8 @@
 // RasterizerSample.cs
 // This file is part of Ghostscript.NET.Samples project
 //
-// Author: Josip Habjan (habjan@gmail.com, http://www.linkedin.com/in/habjan) 
-// Copyright (c) 2013-2016 by Josip Habjan. All rights reserved.
+// Author: Artifex Software Inc. 
+// Copyright (c) 2026 by Artifex Software Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -48,8 +48,8 @@ namespace Ghostscript.NET.Samples
         {
             int desired_dpi = 96;
 
-            string inputPdfPath = @"E:\gss_test\test.pdf";
-            string outputPath = @"E:\gss_test\output\";
+            string inputPdfPath = @"..\..\..\TestFiles\RasterizerSample2.pdf";
+            string outputPath = @".\Output\";
 
             using (GhostscriptRasterizer rasterizer = new GhostscriptRasterizer())
             {
@@ -66,7 +66,7 @@ namespace Ghostscript.NET.Samples
 
                 for (int pageNumber = 1; pageNumber <= rasterizer.PageCount; pageNumber++)
                 {
-                    string pageFilePath = Path.Combine(outputPath, "Page-" + pageNumber.ToString() + ".png");
+                    string pageFilePath = Path.Combine(outputPath, "RasterizerSample2-" + pageNumber.ToString() + ".png");
 
                     var img = rasterizer.GetPage(desired_dpi, pageNumber);
                     if (img != null)

@@ -2,8 +2,8 @@
 // iapi.h.cs
 // This file is part of Ghostscript.NET library
 //
-// Author: Josip Habjan (habjan@gmail.com, http://www.linkedin.com/in/habjan) 
-// Copyright (c) 2013-2016 by Josip Habjan. All rights reserved.
+// Author: Artifex Software Inc. 
+// Copyright (c) 2026 by Artifex Software Inc. All rights reserved.
 //
 // Author ported parts of this code from AFPL Ghostscript. 
 //
@@ -159,8 +159,16 @@ namespace Ghostscript.NET
     /// <param name="argc"></param>
     /// <param name="argv"></param>
     /// <returns></returns>
-    [UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet=CharSet.Ansi)]
+    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
     public delegate int gsapi_init_with_args(IntPtr instance, Int32 argc, string[] argv);
+
+    /// <summary>
+    /// Pointer-based version of gsapi_init_with_args that accepts a pointer
+    /// to an argv array. This allows callers to control the native encoding
+    /// of arguments (e.g., UTF-8 or UTF-16LE) when marshaling strings.
+    /// </summary>
+    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+    public delegate int gsapi_init_with_args_ptr(IntPtr instance, Int32 argc, IntPtr argv);
 
     // The gsapi_run_* functions are like gs_main_run_* except
     // that the error_object is omitted.
@@ -189,6 +197,9 @@ namespace Ghostscript.NET
 
     [UnmanagedFunctionPointer(CallingConvention.Winapi, CharSet=CharSet.Ansi)]
     public delegate int gsapi_run_file(IntPtr instance, String file_name, Int32 user_errors, out Int32 pexit_code);
+
+    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+    public delegate int gsapi_run_file_ptr(IntPtr instance, IntPtr file_name, Int32 user_errors, out Int32 pexit_code);
 
     /// <summary>
     /// Exit the interpreter.

@@ -2,8 +2,8 @@
 // GhostscriptInterpreter.cs
 // This file is part of Ghostscript.NET library
 //
-// Author: Josip Habjan (habjan@gmail.com, http://www.linkedin.com/in/habjan) 
-// Copyright (c) 2013-2016 by Josip Habjan. All rights reserved.
+// Author: Artifex Software Inc. 
+// Copyright (c) 2026 by Artifex Software Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the
@@ -277,26 +277,72 @@ namespace Ghostscript.NET.Interpreter
         /// </summary>
         public void InitArgs(string[] args)
         {
-            if (_gs.is_gsapi_set_arg_encoding_supported)
+            bool usedPtrInit = false;
+
+            if (_gs.is_gsapi_set_arg_encoding_supported && _gs.gsapi_init_with_args_ptr != null)
             {
-                // set the encoding to UTF8
-                int rc_enc = _gs.gsapi_set_arg_encoding(_gs_instance, GS_ARG_ENCODING.UTF8);
+                GS_ARG_ENCODING enc = GS_ARG_ENCODING.UTF8;
+                int rc_enc = _gs.gsapi_set_arg_encoding(_gs_instance, enc);
+
+                IntPtr argvPtr = IntPtr.Zero;
+                IntPtr[] nativeStrings = new IntPtr[args.Length];
+
+                try
+                {
+                    for (int i = 0; i < args.Length; i++)
+                    {
+                        if (enc == GS_ARG_ENCODING.UTF16LE)
+                        {
+                            nativeStrings[i] = Marshal.StringToHGlobalUni(args[i]);
+                        }
+                        else
+                        {
+                            nativeStrings[i] = StringHelper.NativeUtf8FromString(args[i]);
+                        }
+                    }
+
+                    argvPtr = Marshal.AllocHGlobal(IntPtr.Size * args.Length);
+
+                    for (int i = 0; i < args.Length; i++)
+                    {
+                        Marshal.WriteIntPtr(argvPtr, i * IntPtr.Size, nativeStrings[i]);
+                    }
+
+                    int rc_init = _gs.gsapi_init_with_args_ptr(_gs_instance, args.Length, argvPtr);
+
+                    if (ierrors.IsError(rc_init))
+                    {
+                        throw new GhostscriptAPICallException("gsapi_init_with_args_ptr", rc_init);
+                    }
+
+                    usedPtrInit = true;
+                }
+                finally
+                {
+                    if (argvPtr != IntPtr.Zero)
+                    {
+                        Marshal.FreeHGlobal(argvPtr);
+                    }
+
+                    for (int i = 0; i < nativeStrings.Length; i++)
+                    {
+                        if (nativeStrings[i] != IntPtr.Zero)
+                        {
+                            Marshal.FreeHGlobal(nativeStrings[i]);
+                        }
+                    }
+                }
             }
 
-            string[] utf8args = new string[args.Length];
-
-            for(int i = 0; i < args.Length; i++)
+            if (!usedPtrInit)
             {
-                utf8args[i] = StringHelper.ToUtf8String(args[i]);
-            }
-            
-            // GSAPI: initialize the interpreter
-            int rc_init = _gs.gsapi_init_with_args(_gs_instance, utf8args.Length, utf8args);
+                // fallback: pass managed string args
+                int rc_init = _gs.gsapi_init_with_args(_gs_instance, args.Length, args);
 
-            // check if the interpreter is initialized correctly
-            if (ierrors.IsError(rc_init))
-            {
-                throw new GhostscriptAPICallException("gsapi_init_with_args", rc_init);
+                if (ierrors.IsError(rc_init))
+                {
+                    throw new GhostscriptAPICallException("gsapi_init_with_args", rc_init);
+                }
             }
         }
 
@@ -407,13 +453,40 @@ namespace Ghostscript.NET.Interpreter
             }
 
             int exit_code;
-
-            // GSAPI: tell a Ghostscript to run a file
-            int rc_run = _gs.gsapi_run_file(_gs_instance, path, 0, out exit_code);
-
-            if (ierrors.IsFatal(rc_run))
+            // GSAPI: tell Ghostscript to run a file
+            if (_gs.is_gsapi_set_arg_encoding_supported && _gs.gsapi_run_file_ptr != null)
             {
-                throw new GhostscriptAPICallException("gsapi_run_file", rc_run);
+                IntPtr nativePath = IntPtr.Zero;
+                try
+                {
+                    GS_ARG_ENCODING enc = GS_ARG_ENCODING.UTF8; //System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? GS_ARG_ENCODING.UTF16LE : GS_ARG_ENCODING.UTF8;
+
+                    if (enc == GS_ARG_ENCODING.UTF16LE)
+                        nativePath = Marshal.StringToHGlobalUni(path);
+                    else
+                        nativePath = StringHelper.NativeUtf8FromString(path);
+
+                    int rc_run = _gs.gsapi_run_file_ptr(_gs_instance, nativePath, 0, out exit_code);
+
+                    if (ierrors.IsFatal(rc_run))
+                    {
+                        throw new GhostscriptAPICallException("gsapi_run_file_ptr", rc_run);
+                    }
+                }
+                finally
+                {
+                    if (nativePath != IntPtr.Zero)
+                        Marshal.FreeHGlobal(nativePath);
+                }
+            }
+            else
+            {
+                int rc_run = _gs.gsapi_run_file(_gs_instance, path, 0, out exit_code);
+
+                if (ierrors.IsFatal(rc_run))
+                {
+                    throw new GhostscriptAPICallException("gsapi_run_file", rc_run);
+                }
             }
         }
 
