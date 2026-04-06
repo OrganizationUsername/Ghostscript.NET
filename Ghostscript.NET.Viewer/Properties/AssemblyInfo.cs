@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Habjan")]
 [assembly: AssemblyProduct("Ghostscript.NET.Viewer")]
-[assembly: AssemblyCopyright("Copyright © 2013-2021 Josip Habjan (habjan@gmail.com)")]
+[assembly: AssemblyCopyright("Copyright © 2026 Artifex Software Inc.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
