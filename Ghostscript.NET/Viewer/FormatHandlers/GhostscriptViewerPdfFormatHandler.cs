@@ -50,6 +50,8 @@ namespace Ghostscript.NET.Viewer
 
         public GhostscriptViewerPdfFormatHandler(GhostscriptViewer viewer) : base(viewer) { }
 
+        private System.Text.StringBuilder _stdErrBuffer = new System.Text.StringBuilder();
+
         #endregion
 
         #region Initialize
@@ -102,12 +104,27 @@ namespace Ghostscript.NET.Viewer
 
             if (StringHelper.HasNonASCIIChars(filePath))
             {
-                IntPtr ptrStr = StringHelper.NativeUtf8FromString(string.Format("({0}) (r) file runpdfbegin", filePath.Replace("\\", "/")));
+                IntPtr ptrStr = IntPtr.Zero;
 
-                // open PDF file
-                res = this.Execute(ptrStr);
+                try
+                {
+                    // Use platform-appropriate encoding for the PostScript command;
+                    // On Windows use system ANSI (Encoding.Default) to match previous behavior
+                    // (some systems' ANSI codepage can represent local Unicode filenames). On
+                    // non-Windows systems use UTF-8.
+                    // Use UTF-8 for the PostScript string to preserve Unicode characters
+                    // without introducing NUL bytes (which UTF-16LE inside parentheses would).
+                    string cmd = string.Format("({0}) (r) file runpdfbegin", filePath.Replace("\\", "/"));
+                    ptrStr = StringHelper.NativeUtf8FromString(cmd);
 
-                System.Runtime.InteropServices.Marshal.FreeHGlobal(ptrStr);
+                    // open PDF file
+                    res = this.Execute(ptrStr);
+                }
+                finally
+                {
+                    if (ptrStr != IntPtr.Zero)
+                        System.Runtime.InteropServices.Marshal.FreeHGlobal(ptrStr);
+                }
             }
             else
             {
@@ -115,13 +132,59 @@ namespace Ghostscript.NET.Viewer
                 res = this.Execute(string.Format("({0}) (r) file runpdfbegin", filePath.Replace("\\", "/")));
             }
 
-            if (res == ierrors.e_ioerror)
+            if (res != 0 && res != ierrors.e_Info)
             {
-                throw new GhostscriptException("IO error for file: '" + filePath + "'", ierrors.e_ioerror);
-            }
-            else if (res == ierrors.e_invalidfileaccess)
-            {
-                throw new GhostscriptException("IO security problem (access control failure) for file: '" + filePath + "'", ierrors.e_ioerror);
+                string errName = null;
+
+                int idx = -res;
+                if (idx >= 0 && idx < ierrors.ERROR_NAMES.Count)
+                {
+                    errName = ierrors.ERROR_NAMES[idx];
+                }
+
+                string stderr = string.Empty;
+                lock (_stdErrBuffer)
+                {
+                    stderr = _stdErrBuffer.ToString();
+                }
+
+                string msg = errName != null ? string.Format("Ghostscript error {0} ({1}) for file: '{2}'", errName, res, filePath) : string.Format("Ghostscript returned error {0} for file: '{1}'", res, filePath);
+
+                if (!string.IsNullOrWhiteSpace(stderr))
+                {
+                    msg += "\nGhostscript stderr:\n" + stderr;
+                }
+
+                // Try fallback: on Windows, if non-ASCII filename may not be representable
+                // in the system ANSI encoding used by run_string, copy the file to a
+                // temporary ASCII-only path and try opening that.
+                if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) && StringHelper.HasNonASCIIChars(filePath))
+                {
+                    try
+                    {
+                        // Try to create temp file in the same directory as the source file
+                        string dir = System.IO.Path.GetDirectoryName(filePath);
+                        string tempDir = !string.IsNullOrEmpty(dir) ? dir : System.IO.Path.GetTempPath();
+                        string temp = System.IO.Path.Combine(tempDir, Guid.NewGuid().ToString() + System.IO.Path.GetExtension(filePath));
+                        System.IO.File.Copy(filePath, temp);
+                        // register for cleanup when the viewer is closed
+                        this.Viewer.RegisterTempFile(temp);
+
+                        // try opening the ASCII-named temp file
+                        int r2 = this.Execute(string.Format("({0}) (r) file runpdfbegin", temp.Replace("\\", "/")));
+
+                        if (r2 == 0 || r2 == ierrors.e_Info)
+                        {
+                            res = r2;
+                        }
+                    }
+                    catch { }
+                }
+
+                if (res != 0 && res != ierrors.e_Info)
+                {
+                    throw new GhostscriptException(msg, res);
+                }
             }
 
             this.Execute("/FirstPage where { pop FirstPage } { 1 } ifelse");
@@ -265,6 +328,10 @@ namespace Ghostscript.NET.Viewer
         public override void StdError(string message)
         {
             System.Diagnostics.Debug.WriteLine($"GS:StdError > {message}");
+            lock (_stdErrBuffer)
+            {
+                _stdErrBuffer.AppendLine(message);
+            }
         }
 
         #endregion

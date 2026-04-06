@@ -42,7 +42,7 @@ namespace Ghostscript.NET.Samples
     {
         public void Start()
         {
-            string inputFile = @"E:\gss_test\test_postscript.ps";
+            string inputFile = @"..\..\..\TestFiles\PipedOutputSample.ps";
 
             GhostscriptPipedOutput gsPipedOutput = new GhostscriptPipedOutput();
 
@@ -76,7 +76,7 @@ namespace Ghostscript.NET.Samples
                     //}
                     //else if (writeToDisk)
                     //{
-                    //    File.WriteAllBytes(@"E:\gss_test\output\test_piped_output.pdf", rawDocumentData);
+                        File.WriteAllBytes(@".\output\PipedOutputSample.pdf", rawDocumentData);
                     //}
                 }
                 catch (Exception ex)

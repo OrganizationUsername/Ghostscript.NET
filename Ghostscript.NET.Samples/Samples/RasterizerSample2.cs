@@ -48,8 +48,8 @@ namespace Ghostscript.NET.Samples
         {
             int desired_dpi = 96;
 
-            string inputPdfPath = @"E:\gss_test\test.pdf";
-            string outputPath = @"E:\gss_test\output\";
+            string inputPdfPath = @"..\..\..\TestFiles\RasterizerSample2.pdf";
+            string outputPath = @".\Output\";
 
             using (GhostscriptRasterizer rasterizer = new GhostscriptRasterizer())
             {
@@ -66,7 +66,7 @@ namespace Ghostscript.NET.Samples
 
                 for (int pageNumber = 1; pageNumber <= rasterizer.PageCount; pageNumber++)
                 {
-                    string pageFilePath = Path.Combine(outputPath, "Page-" + pageNumber.ToString() + ".png");
+                    string pageFilePath = Path.Combine(outputPath, "RasterizerSample2-" + pageNumber.ToString() + ".png");
 
                     var img = rasterizer.GetPage(desired_dpi, pageNumber);
                     if (img != null)

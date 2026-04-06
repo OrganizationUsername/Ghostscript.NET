@@ -26,6 +26,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace Ghostscript.NET.Samples
@@ -36,28 +37,51 @@ namespace Ghostscript.NET.Samples
 
         public void Start()
         {
-            ThreadPool.QueueUserWorkItem(new WaitCallback(Instance1));
-            ThreadPool.QueueUserWorkItem(new WaitCallback(Instance2));
+            // Wait until both workers finish; otherwise the process can exit before
+            // Ghostscript writes output (thread-pool work is not foreground work).
+            using (CountdownEvent done = new CountdownEvent(2))
+            {
+                ThreadPool.QueueUserWorkItem(Instance1, done);
+                ThreadPool.QueueUserWorkItem(Instance2, done);
+                done.Wait();
+            }
         }
 
         private void Process(string input, string output, int startPage, int endPage)
         {
-            // make sure that constructor 'fromMemory' option is set to true if 
-            // you want to run multiple instances of the Ghostscript
-            Ghostscript.NET.Processor.GhostscriptProcessor processor = new Processor.GhostscriptProcessor(_gs_verssion_info, true);
-            processor.StartProcessing(CreateTestArgs(input, output, startPage, endPage), new ConsoleStdIO(true, true, true));
+            // Load GS from memory on Windows so parallel instances do not share one native DLL mapping.
+            bool fromMemory = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            using (Processor.GhostscriptProcessor processor = new Processor.GhostscriptProcessor(_gs_verssion_info, fromMemory))
+            {
+                processor.StartProcessing(CreateTestArgs(input, output, startPage, endPage), new ConsoleStdIO(true, true, true));
+            }
         }
 
-        private void Instance1(object target)
+        private void Instance1(object state)
         {
-            // export pdf pages to images
-            Process(@"E:\gss_test\test.pdf", @"E:\gss_test\output\a_test-%03d.png", 1, 100);
+            CountdownEvent done = (CountdownEvent)state;
+            try
+            {
+                // Same test PDF as ProcessorSample1 (place any PDF under TestFiles\).
+                Process(@"..\..\..\TestFiles\ProcessorSample1.pdf", @".\Output\RunMultipleInstancesSample-a%03d.png", 1, 2);
+            }
+            finally
+            {
+                done.Signal();
+            }
         }
 
-        private void Instance2(object target)
+        private void Instance2(object state)
         {
-            // export pdf pages to images
-            Process(@"E:\gss_test\test.pdf", @"E:\gss_test\output\b_test-%03d.png", 1, 100);
+            CountdownEvent done = (CountdownEvent)state;
+            try
+            {
+                Process(@"..\..\..\TestFiles\ProcessorSample1.pdf", @".\Output\RunMultipleInstancesSample-b%03d.png", 1, 2);
+            }
+            finally
+            {
+                done.Signal();
+            }
         }
 
         private string[] CreateTestArgs(string inputPath, string outputPath, int pageFrom, int pageTo)
@@ -79,7 +103,8 @@ namespace Ghostscript.NET.Samples
             gsArgs.Add("-dTextAlphaBits=4");
             gsArgs.Add("-dGraphicsAlphaBits=4");
             gsArgs.Add(@"-sOutputFile=" + outputPath);
-            gsArgs.Add(@"-f" + inputPath);
+            gsArgs.Add("-f");
+            gsArgs.Add(inputPath);
 
             return gsArgs.ToArray();
         }

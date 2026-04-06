@@ -53,6 +53,18 @@ namespace Ghostscript.NET
             return nativeUtf8;
         }
 
+        public static IntPtr NativeAnsiFromString(string managedString)
+        {
+            // Use system default encoding (ANSI / code page) and produce null-terminated buffer
+            Encoding enc = Encoding.Default;
+            int len = enc.GetByteCount(managedString);
+            byte[] buffer = new byte[len + 1];
+            enc.GetBytes(managedString, 0, managedString.Length, buffer, 0);
+            IntPtr nativeAnsi = Marshal.AllocHGlobal(buffer.Length);
+            Marshal.Copy(buffer, 0, nativeAnsi, buffer.Length);
+            return nativeAnsi;
+        }
+
         #endregion
 
         #region HasNonASCIIChars

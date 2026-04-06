@@ -277,10 +277,10 @@ namespace Ghostscript.NET.Processor
                 throw new ArgumentOutOfRangeException("args");
             }
 
-            for (int i = 0; i < args.Length; i++)
-            {
-                args[i] = System.Text.Encoding.Default.GetString(System.Text.Encoding.UTF8.GetBytes(args[i]));
-            }
+            // Prepare arguments: if the native gsapi_set_arg_encoding API is supported
+            // we will set the requested encoding and pass native-encoded argv pointers
+            // (UTF-16LE on Windows, UTF-8 on non-Windows). Otherwise fall back to
+            // calling the managed string[] version of gsapi_init_with_args.
 
             _isRunning = true;
 
@@ -326,12 +326,68 @@ namespace Ghostscript.NET.Processor
 
                 _stopProcessing = false;
 
-                if (_gs.is_gsapi_set_arg_encoding_supported)
+                bool usedPtrInit = false;
+                int rc_init = 0;
+
+                if (_gs.is_gsapi_set_arg_encoding_supported && _gs.gsapi_init_with_args_ptr != null)
                 {
-                    int rc_enc = _gs.gsapi_set_arg_encoding(instance, GS_ARG_ENCODING.UTF8);
+                    // choose encoding based on platform
+                    GS_ARG_ENCODING enc = GS_ARG_ENCODING.UTF8;// System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? GS_ARG_ENCODING.UTF16LE : GS_ARG_ENCODING.UTF8;
+                    int rc_enc = _gs.gsapi_set_arg_encoding(instance, enc);
+
+                    // Build native argv with chosen encoding and call pointer-based init
+                    IntPtr argvPtr = IntPtr.Zero;
+                    IntPtr[] nativeStrings = new IntPtr[args.Length];
+
+                    try
+                    {
+                        for (int i = 0; i < args.Length; i++)
+                        {
+                            if (enc == GS_ARG_ENCODING.UTF16LE)
+                            {
+                                nativeStrings[i] = System.Runtime.InteropServices.Marshal.StringToHGlobalUni(args[i]);
+                            }
+                            else // UTF8
+                            {
+                                nativeStrings[i] = StringHelper.NativeUtf8FromString(args[i]);
+                            }
+                        }
+
+                        // allocate memory for argv pointers
+                        argvPtr = System.Runtime.InteropServices.Marshal.AllocHGlobal(IntPtr.Size * args.Length);
+
+                        for (int i = 0; i < args.Length; i++)
+                        {
+                            System.Runtime.InteropServices.Marshal.WriteIntPtr(argvPtr, i * IntPtr.Size, nativeStrings[i]);
+                        }
+
+                        rc_init = _gs.gsapi_init_with_args_ptr(instance, args.Length, argvPtr);
+
+                        usedPtrInit = true;
+                    }
+                    finally
+                    {
+                        // free native memory
+                        if (argvPtr != IntPtr.Zero)
+                        {
+                            System.Runtime.InteropServices.Marshal.FreeHGlobal(argvPtr);
+                        }
+
+                        for (int i = 0; i < nativeStrings.Length; i++)
+                        {
+                            if (nativeStrings[i] != IntPtr.Zero)
+                            {
+                                System.Runtime.InteropServices.Marshal.FreeHGlobal(nativeStrings[i]);
+                            }
+                        }
+                    }
                 }
 
-                int rc_init = _gs.gsapi_init_with_args(instance, args.Length, args);
+                // if we didn't use pointer-based init (older library), fall back to managed call
+                if (!usedPtrInit)
+                {
+                    rc_init = _gs.gsapi_init_with_args(instance, args.Length, args);
+                }
 
                 if (ierrors.IsErrorIgnoreQuit(rc_init))
                 {

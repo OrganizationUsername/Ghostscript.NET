@@ -234,6 +234,7 @@ namespace Ghostscript.NET
         public gsapi_set_display_callback @gsapi_set_display_callback = null;
         public gsapi_set_arg_encoding @gsapi_set_arg_encoding = null;
         public gsapi_init_with_args @gsapi_init_with_args = null;
+        public gsapi_init_with_args_ptr @gsapi_init_with_args_ptr = null;
         public gsapi_run_string_begin @gsapi_run_string_begin = null;
         public gsapi_run_string_continue @gsapi_run_string_continue = null;
         public gsapi_run_string_end @gsapi_run_string_end = null;
@@ -241,6 +242,7 @@ namespace Ghostscript.NET
         public gsapi_run_string @gsapi_run_string = null;
         public gsapi_run_ptr_string @gsapi_run_ptr_string = null;
         public gsapi_run_file @gsapi_run_file = null;
+        public gsapi_run_file_ptr @gsapi_run_file_ptr = null;
         public gsapi_exit @gsapi_exit = null;
 
         #endregion 
@@ -350,6 +352,12 @@ namespace Ghostscript.NET
 
             this.gsapi_run_file = _library.GetDelegateForFunction<gsapi_run_file>("gsapi_run_file");
 
+            // optional pointer-based run_file (may not be available on older libraries)
+            this.gsapi_run_file_ptr = _library.GetDelegateForFunction<gsapi_run_file_ptr>("gsapi_run_file");
+
+            // optional pointer-based init (may not be available on older libraries)
+            this.gsapi_init_with_args_ptr = _library.GetDelegateForFunction<gsapi_init_with_args_ptr>("gsapi_init_with_args");
+
             if (this.gsapi_run_file == null)
                 throw new GhostscriptException(string.Format(symbolMappingError, "gsapi_run_file"));
 
@@ -447,8 +455,14 @@ namespace Ghostscript.NET
 
             this.gsapi_run_file = _crossPlatformLibrary.GetDelegateForFunction<gsapi_run_file>("gsapi_run_file");
 
+            // optional pointer-based run_file (may not be available on older libraries)
+            this.gsapi_run_file_ptr = _crossPlatformLibrary.GetDelegateForFunction<gsapi_run_file_ptr>("gsapi_run_file");
+
             if (this.gsapi_run_file == null)
                 throw new GhostscriptException(string.Format(symbolMappingError, "gsapi_run_file"));
+
+            // optional pointer-based init (may not be available on older libraries)
+            this.gsapi_init_with_args_ptr = _crossPlatformLibrary.GetDelegateForFunction<gsapi_init_with_args_ptr>("gsapi_init_with_args");
 
             this.gsapi_exit = _crossPlatformLibrary.GetDelegateForFunction<gsapi_exit>("gsapi_exit");
 

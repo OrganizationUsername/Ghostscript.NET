@@ -26,6 +26,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Ghostscript.NET.Samples
 {
@@ -42,7 +43,7 @@ namespace Ghostscript.NET.Samples
 
         private void CheckAllPagesInkCoverage()
         {
-            string inputFile = @"E:\gss_test\mixed_test.pdf";
+            string inputFile = @"..\..\..\TestFiles\GetInkCoverageSample.pdf";
 
             Dictionary<int, GhostscriptPageInkCoverage> pages = GhostscriptPdfInfo.GetInkCoverage(inputFile);
 
@@ -58,7 +59,7 @@ namespace Ghostscript.NET.Samples
 
         private void CheckInkCoverageForPagesThreeToSix()
         {
-            string inputFile = @"E:\gss_test\mixed_test.pdf";
+            string inputFile = @"..\..\..\TestFiles\GetInkCoverageSample.pdf";
             Dictionary<int, GhostscriptPageInkCoverage> pages = GhostscriptPdfInfo.GetInkCoverage(inputFile, 3, 6);
 
             string outputTextTemplate = "Page {0} ink coverage -> C:{1}% / M:{2}% / Y:{3}% / K:{4}%";

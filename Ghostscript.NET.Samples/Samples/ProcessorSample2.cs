@@ -34,8 +34,8 @@ namespace Ghostscript.NET.Samples
     {
         public void Start()
         {
-            string inputFile = @"E:\gss_test\test.pdf";
-            string outputFile = @"E:\gss_test\output\page-%03d.png";
+            string inputFile = @"..\..\..\TestFiles\ProcessorSample2.pdf";
+            string outputFile = @".\Output\ProcessorSample2-%03d.png";
 
             int pageFrom = 1;
             int pageTo = 50;

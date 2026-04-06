@@ -300,6 +300,15 @@ namespace Ghostscript.NET.Viewer
             this.Open();
         }
 
+        /// <summary>
+        /// Register a path for cleanup when the viewer is closed.
+        /// </summary>
+        /// <param name="path">Path to delete on close.</param>
+        public void RegisterTempFile(string path)
+        {
+            _fileCleanupHelper.Add(path);
+        }
+
         #endregion
 
         #region Open - library
